@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><UserSecretsId>cjora-useraccounts-local-development</UserSecretsId></PropertyGroup><ItemGroup><ProjectReference Include="..\CJora.UserAccounts.Application\CJora.UserAccounts.Application.csproj" /><ProjectReference Include="..\CJora.UserAccounts.Infrastructure\CJora.UserAccounts.Infrastructure.csproj" /></ItemGroup></Project>

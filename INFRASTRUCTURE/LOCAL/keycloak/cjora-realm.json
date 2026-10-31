@@ -1,0 +1,11 @@
+{
+  "realm": "cjora",
+  "enabled": true,
+  "displayName": "CJora Local Development",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "bruteForceProtected": true,
+  "clients": []
+}

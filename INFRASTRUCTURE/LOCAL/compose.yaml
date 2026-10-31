@@ -1,0 +1,29 @@
+name: cjora-local
+services:
+  mysql:
+    image: mysql:8.4.7
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql -uroot -e "SELECT 1" >/dev/null 2>&1']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:?Set KEYCLOAK_ADMIN_USERNAME in .env}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./keycloak:/opt/keycloak/data/import:ro
+volumes:
+  mysql-data:
+  keycloak-data:
