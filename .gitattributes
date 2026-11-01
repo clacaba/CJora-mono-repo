@@ -1,4 +1,6 @@
+# Auto detect text files and perform LF normalization.
+* text=auto
 # Applied migrations are checksum-sensitive: preserve their exact bytes on every platform.
 *.sql -text
-# This already-applied migration has an intentional trailing blank line; do not rewrite it.
+# Preserve the already-applied migration exactly, including its trailing blank line.
 SRC/GATEWAY/CJora.Gateway.Migrations/Scripts/0002_service_method_registry.sql whitespace=-blank-at-eof
