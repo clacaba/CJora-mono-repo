@@ -68,9 +68,10 @@ try {
  }
  $forwarded = (& curl.exe --silent --show-error --fail --noproxy localhost,127.0.0.1 --cacert $certificatePath 'https://localhost:7000/api/v1/cor/health/live') | ConvertFrom-Json
  if ($forwarded.service -ne 'Core') { throw 'Gateway is not forwarding to Core' }
- Assert-NotFound 'https://localhost:7000/api/v1/idm/sessions'
+ $loginMethodStatus = & curl.exe --silent --show-error --noproxy localhost,127.0.0.1 --cacert $certificatePath --output NUL --write-out '%{http_code}' 'https://localhost:7000/api/v1/idm/sessions'
+ if ($LASTEXITCODE -ne 0 -or $loginMethodStatus -ne '405') { throw 'Login start must reject GET; it requires POST and CSRF protection.' }
  Assert-NotFound 'https://localhost:7000/api/v1/idm/health/live'
- Write-Output 'PASS: Gateway still forwards versioned API requests only to Core; login and direct Identity Management proxy routes remain unavailable.'
+ Write-Output 'PASS: Gateway still forwards versioned API requests only to Core; login requires POST and direct Identity Management health proxy remains unavailable.'
 }
 finally {
  foreach ($process in $processes) { if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force } }

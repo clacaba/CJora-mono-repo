@@ -1,0 +1,48 @@
+import { fileURLToPath } from 'node:url';
+import { chromium } from '@playwright/test';
+import { expect } from '@playwright/test';
+import fs from 'node:fs';
+import { X509Certificate, createHash } from 'node:crypto';
+const root=new URL('../',import.meta.url);
+const certificate=new X509Certificate(fs.readFileSync(new URL('.local/certificates/localhost-public.pem',root)));
+const pin=createHash('sha256').update(certificate.publicKey.export({format:'der',type:'spki'})).digest('base64');
+const password=fs.readFileSync(new URL('INFRASTRUCTURE/LOCAL/.env',root),'utf8').match(/^CJORA_DEMO_USER_PASSWORD=(.+)$/m)?.[1].trim();
+let browser;let stage='launch';
+try {
+ browser=await chromium.launch({channel:'msedge',headless:true,args:['--ignore-certificate-errors-spki-list='+pin]});
+ const context=await browser.newContext({viewport:{width:1365,height:900}});
+ const page=await context.newPage();
+ let errors=0;page.on('pageerror',()=>errors++);
+ stage='open-app';await page.goto('https://localhost:7000/app');
+ stage='login-screen';await expect(page.getByRole('button',{name:'Continue to sign in'})).toBeVisible();
+ await page.screenshot({path:fileURLToPath(new URL('.local/login-tests/web-login.png',root)),fullPage:true});
+ await page.getByLabel('Email address',{exact:true}).fill('alex@example.test');
+ stage='start-login';await page.getByRole('button',{name:'Continue to sign in'}).click();
+ await expect(page).toHaveURL(/localhost:8080/);
+ await page.locator('input[name=password]').fill(password);
+ stage='provider-login';await page.locator('#kc-login').click();
+ await expect(page).toHaveURL('https://localhost:7000/app');
+ await expect(page.getByRole('heading',{name:'Hello, Alex Demo.'})).toBeVisible();
+ const cookies=await context.cookies('https://localhost:7000');
+ const cookie=cookies.find(c=>c.name==='__Host-cjora-session');
+ if(!cookie?.httpOnly||!cookie.secure||cookie.sameSite!=='Lax')throw new Error('Session cookie policy');
+ if(await page.evaluate(()=>document.cookie.includes('__Host-cjora-session')))throw new Error('HttpOnly cookie exposed');
+ if(await page.evaluate(()=>localStorage.length||sessionStorage.length))throw new Error('Unexpected browser token storage');
+ await page.reload();
+ await expect(page.getByRole('heading',{name:'Hello, Alex Demo.'})).toBeVisible();
+ await page.screenshot({path:fileURLToPath(new URL('.local/login-tests/web-profile.png',root)),fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth))throw new Error('Mobile horizontal overflow');
+ await page.screenshot({path:fileURLToPath(new URL('.local/login-tests/web-mobile.png',root)),fullPage:true});
+ await page.getByRole('button',{name:'Sign out',exact:true}).click();
+ await expect(page.getByText('You have signed out of CJora.')).toBeVisible();
+ await page.reload();
+ stage='login-screen';await expect(page.getByRole('button',{name:'Continue to sign in'})).toBeVisible();
+ stage='final-profile-check';const status=await page.evaluate(async()=>(await fetch('/api/v1/cor/customers/me')).status);
+ if(status!==401)throw new Error('Profile still available after logout');
+ if(errors)throw new Error('Browser JavaScript errors');
+ console.log('PASS: Edge login -> Keycloak -> app profile -> reload -> logout; secure cookies, no token storage, responsive layout.');
+} catch(error) {
+ console.error('FAIL: Browser login journey at '+stage+' ('+error.name+'). Provider URLs, credentials and page contents suppressed.');
+ process.exitCode=1;
+} finally {await browser?.close();}

@@ -1,2 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">  <ItemGroup><PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" /></ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><UserSecretsId>cjora-transactions-local-development</UserSecretsId></PropertyGroup>  <ItemGroup><PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" /></ItemGroup>  <ItemGroup>
+  <ProjectReference Include="..\CJora.Transactions.Infrastructure\CJora.Transactions.Infrastructure.csproj" />
+</ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+Current login setup is documented in [LOGIN-MILESTONE.md](LOGIN-MILESTONE.md). Core, Gateway and Identity Management databases and the local Keycloak client are now provisioned; older unimplemented-status notes below are historical.
+
 # Local dependencies and Keycloak
 
 Keycloak is selected for identity. CJora Identity Management still owns memberships and AUTH_SESSION; Core owns Programs, customers and CORE_SESSION. Provider authentication alone grants no Program access.
@@ -32,3 +34,5 @@ Kafka is deferred until customer synchronization. No cloud resources are provisi
 Sources: https://www.keycloak.org/getting-started/getting-started-docker and https://www.keycloak.org/server/db . Image tags are pinned local defaults and require routine update review.
 
 Gateway registry ownership is active: run SCRIPTS/Initialize-GatewayDatabase.ps1 to configure CJORA_GATEWAY, its migrations/runtime account, the legacy Core archive handoff and local Gateway-to-Core caller credential. Core migrations 0001-0004 and Gateway 0001-0002 are applied locally. Other service databases are not provisioned. Details: DYNAMIC-GATEWAY.md.
+
+Kafka/customer synchronization is now implemented for Development. SCRIPTS/Initialize-CustomerSync.ps1 starts the loopback-only Kafka service, creates its topic, applies Core/Transactions migrations and configures isolated runtime credentials. See CUSTOMER-SYNCHRONIZATION.md; earlier deferred-status entries are historical.

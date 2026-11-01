@@ -1,0 +1,1200 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CJora proposed account and internal-transfer contracts",
+    "version": "0.1.0",
+    "description": "DESIGN CONTRACT ONLY. No endpoints, account/ledger tables or posting implementation currently exist. Same-Program same-currency fictional internal transfers; no overdraft, FX, fees, holds or external payments."
+  },
+  "servers": [
+    {
+      "url": "https://localhost:7000",
+      "description": "Proposed public routes through Gateway -> Core -> Transactions."
+    }
+  ],
+  "security": [
+    {
+      "ApplicationSession": []
+    }
+  ],
+  "paths": {
+    "/api/v1/txn/accounts": {
+      "get": {
+        "operationId": "listOwnAccounts",
+        "tags": [
+          "Proposed finance"
+        ],
+        "description": "Contract only; not implemented. Requires ACCOUNTS.READ.",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "description": "Opaque protected cursor bound to account, Program, customer, filters and upper entry sequence."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUID, amount/reference, unsupported review version, malformed input or cursor.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, revoked or expired linked session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission, CSRF, Origin or fresh authority rejected.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource is unavailable in the authenticated scope; no cross-customer existence details.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait."
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or lock/recovery unavailable; outcome may be unknown. Resolve the original intent before retrying.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/txn/transfer-intents": {
+      "post": {
+        "operationId": "prepareTransferIntent",
+        "tags": [
+          "Proposed finance"
+        ],
+        "description": "Contract only; not implemented. Requires TRANSFERS.CREATE and live linked-session validation.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "Nonempty canonical UUID. Scoped by authenticated Program/customer/operation. Reuse unchanged after an uncertain outcome."
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fresh session-bound token from the existing CSRF endpoint."
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "https://localhost:7000"
+              ]
+            },
+            "description": "Browser supplies the exact origin. Deployment origin must be configured before production."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransferIntentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing result replayed without another posting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferIntent"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUID, amount/reference, unsupported review version, malformed input or cursor.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, revoked or expired linked session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission, CSRF, Origin or fresh authority rejected.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource is unavailable in the authenticated scope; no cross-customer existence details.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, terminal/expired intent or review-session change.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authorized confirmation rejected: insufficient funds, restricted account, currency or limit policy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait."
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or lock/recovery unavailable; outcome may be unknown. Resolve the original intent before retrying.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/txn/transfer-intents/{intentUuid}": {
+      "get": {
+        "operationId": "getOwnTransferIntent",
+        "tags": [
+          "Proposed finance"
+        ],
+        "description": "Contract only; not implemented. Requires TRANSFERS.CREATE.",
+        "parameters": [
+          {
+            "name": "intentUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUID, amount/reference, unsupported review version, malformed input or cursor.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, revoked or expired linked session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission, CSRF, Origin or fresh authority rejected.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource is unavailable in the authenticated scope; no cross-customer existence details.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait."
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or lock/recovery unavailable; outcome may be unknown. Resolve the original intent before retrying.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/txn/transfer-intents/{intentUuid}/confirm": {
+      "post": {
+        "operationId": "confirmTransferIntent",
+        "tags": [
+          "Proposed finance"
+        ],
+        "description": "Contract only; not implemented. Requires TRANSFERS.CREATE and live linked-session validation.",
+        "parameters": [
+          {
+            "name": "intentUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "description": "Nonempty canonical UUID. Scoped by authenticated Program/customer/operation. Reuse unchanged after an uncertain outcome."
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fresh session-bound token from the existing CSRF endpoint."
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "https://localhost:7000"
+              ]
+            },
+            "description": "Browser supplies the exact origin. Deployment origin must be configured before production."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmTransferIntentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing result replayed without another posting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferReceipt"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUID, amount/reference, unsupported review version, malformed input or cursor.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, revoked or expired linked session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission, CSRF, Origin or fresh authority rejected.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource is unavailable in the authenticated scope; no cross-customer existence details.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict, terminal/expired intent or review-session change.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authorized confirmation rejected: insufficient funds, restricted account, currency or limit policy.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait."
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or lock/recovery unavailable; outcome may be unknown. Resolve the original intent before retrying.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/txn/accounts/{accountUuid}/transactions": {
+      "get": {
+        "operationId": "listOwnAccountTransactions",
+        "tags": [
+          "Proposed finance"
+        ],
+        "description": "Contract only; not implemented. Requires TRANSACTIONS.READ.",
+        "parameters": [
+          {
+            "name": "accountUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "description": "Opaque protected cursor bound to account, Program, customer, filters and upper entry sequence."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUID, amount/reference, unsupported review version, malformed input or cursor.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, revoked or expired linked session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission, CSRF, Origin or fresh authority rejected.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource is unavailable in the authenticated scope; no cross-customer existence details.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait."
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or lock/recovery unavailable; outcome may be unknown. Resolve the original intent before retrying.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/txn/accounts/{accountUuid}/transactions/{transferUuid}": {
+      "get": {
+        "operationId": "getOwnAccountTransaction",
+        "tags": [
+          "Proposed finance"
+        ],
+        "description": "Contract only; not implemented. Requires TRANSACTIONS.READ.",
+        "parameters": [
+          {
+            "name": "accountUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "transferUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid UUID, amount/reference, unsupported review version, malformed input or cursor.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, revoked or expired linked session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission, CSRF, Origin or fresh authority rejected.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource is unavailable in the authenticated scope; no cross-customer existence details.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait."
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or lock/recovery unavailable; outcome may be unknown. Resolve the original intent before retrying.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApplicationSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-cjora-session",
+        "description": "Existing opaque HttpOnly application cookie, never an IdP access token in browser storage."
+      }
+    },
+    "schemas": {
+      "Amount": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "PHP",
+              "SGD",
+              "USD",
+              "JPY",
+              "KWD"
+            ],
+            "description": "Verified catalog only; the Program must explicitly enable the currency."
+          },
+          "minorUnits": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "Canonical integer minor units, maximum 9223372036854775807. Server validates the numeric bound; never use a JSON number."
+          }
+        },
+        "required": [
+          "currency",
+          "minorUnits"
+        ]
+      },
+      "CreateTransferIntentRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sourceAccountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "destinationAccountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 140,
+            "pattern": "^[ -~]*$"
+          }
+        },
+        "required": [
+          "sourceAccountUuid",
+          "destinationAccountUuid",
+          "amount"
+        ]
+      },
+      "ConfirmTransferIntentRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reviewVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          }
+        },
+        "required": [
+          "reviewVersion"
+        ]
+      },
+      "Account": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "accountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "PHP",
+              "SGD",
+              "USD",
+              "JPY",
+              "KWD"
+            ],
+            "description": "Verified catalog only; the Program must explicitly enable the currency."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "RESTRICTED",
+              "CLOSED"
+            ]
+          },
+          "postedMinor": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19,
+            "description": "Canonical integer minor units, maximum 9223372036854775807. Server validates the numeric bound; never use a JSON number."
+          },
+          "availableMinor": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "maxLength": 19,
+            "description": "Canonical integer minor units, maximum 9223372036854775807. Server validates the numeric bound; never use a JSON number."
+          }
+        },
+        "required": [
+          "accountUuid",
+          "label",
+          "currency",
+          "status",
+          "postedMinor",
+          "availableMinor"
+        ]
+      },
+      "AccountPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/Account"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "TransferIntent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "intentUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PREPARED",
+              "POSTED",
+              "REJECTED",
+              "EXPIRED"
+            ]
+          },
+          "reviewVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "sourceAccountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "destinationAccountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "destinationLabel": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "feeMinor": {
+            "type": "string",
+            "enum": [
+              "0"
+            ]
+          },
+          "totalDebitMinor": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$",
+            "maxLength": 19,
+            "description": "Canonical integer minor units, maximum 9223372036854775807. Server validates the numeric bound; never use a JSON number."
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 140
+          },
+          "expiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "transferUuid": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "failureCode": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "intentUuid",
+          "state",
+          "reviewVersion",
+          "sourceAccountUuid",
+          "destinationAccountUuid",
+          "destinationLabel",
+          "amount",
+          "feeMinor",
+          "totalDebitMinor",
+          "reference",
+          "expiresAtUtc",
+          "transferUuid",
+          "failureCode"
+        ]
+      },
+      "TransferReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transferUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "intentUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "POSTED"
+            ]
+          },
+          "sourceAccountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "destinationAccountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "feeMinor": {
+            "type": "string",
+            "enum": [
+              "0"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 140
+          },
+          "postedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "transferUuid",
+          "intentUuid",
+          "state",
+          "sourceAccountUuid",
+          "destinationAccountUuid",
+          "amount",
+          "feeMinor",
+          "reference",
+          "postedAtUtc"
+        ]
+      },
+      "HistoryEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transferUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "DEBIT",
+              "CREDIT"
+            ]
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "counterpartyLabel": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 140
+          },
+          "postedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "transferUuid",
+          "accountUuid",
+          "direction",
+          "amount",
+          "counterpartyLabel",
+          "reference",
+          "postedAtUtc"
+        ]
+      },
+      "HistoryPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/HistoryEntry"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "Problem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "reference": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "intentUuid": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "reference"
+        ]
+      }
+    }
+  }
+}

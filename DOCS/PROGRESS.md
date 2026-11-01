@@ -1,3 +1,57 @@
+# Current status — account and ledger contracts, 1 November 2026
+
+Account/ledger/internal-transfer contracts and pure domain/request rules are implemented. Money uses exact integer minor units and string API amounts; tested rules cover balanced immutable journals, ownership, Program/currency policy, no overdrafts, overflow, scoped idempotency, strict request DTOs, financial permission/freshness checks and session-bound five-minute reviews.
+
+The full solution builds without warnings/errors; all 247 backend unit cases pass. Proposed OpenAPI reference/shape/security checks pass through node SCRIPTS/Test-FinancialContracts.mjs. The example currency minor-unit metadata was verified against the SIX maintenance-agency list. No currency/limit/financial permission was enabled for any Program/user.
+
+See [FINANCIAL-CONTRACTS.md](FINANCIAL-CONTRACTS.md) and [proposed OpenAPI](CONTRACTS/transactions-v1.openapi.json). Financial endpoints, financial table migrations, a posting repository/routine, authority-provider implementation, accounts/funding and actual transfers are not implemented. No database changes or financial records were created by this milestone. Existing login/customer synchronization runtime wiring was not changed.
+
+Next: implement Transactions migration 0003 and its single atomic posting routine, protected Core -> Transactions workflow and independent financial credentials; prove concurrency, rollback, idempotency and uncertain-commit recovery before enabling fictional transfers. Changes remain local and unpushed.
+
+Earlier entries below are historical and superseded by this status.
+
+---
+
+# Current status — Kafka customer synchronization, 1 November 2026
+
+Core -> Kafka -> Transactions customer synchronization is implemented for Development. Customer creation/update, audit and outbox insertion commit atomically through Core's CustomerWriter; the local operator CLI exposes that path without adding a public administration API. Existing customers can be reconciled safely. Transactions owns new Domain/Application/Infrastructure layers and an idempotent, versioned projection using the same customer UUID.
+
+Local Kafka is running on loopback with persistent storage. Core 0006 and Transactions 0001–0002 are applied; migration replay and snapshot reconciliation are no-ops on repeated initialization. Runtime accounts are table-scoped and do not receive cross-database access. Secrets remain in ignored .env/User Secrets. The solution has 44 projects.
+
+Validation: build has zero warnings/errors; 184 backend unit cases pass. Real Kafka/MySQL checks pass atomic rollback, command idempotency, transient database connection failure, duplicate/stale/out-of-order snapshots, immutable scope, poison-event quarantine, following valid messages, expired lease/old-owner rejection and broker restart recovery. Core commits while Kafka is stopped and the event delivers after restart. Runtime permission denials and independently persisted operator errors were verified. Existing eight-service health/Swagger, dynamic Gateway uploads/routing and secure login regressions pass.
+
+See [CUSTOMER-SYNCHRONIZATION.md](CUSTOMER-SYNCHRONIZATION.md) for setup, the operator command, event contract and recovery limits. This is at-least-once delivery with idempotent database effects. Kafka is a single local broker without production transport/security configuration. Test fixtures/rejections are retained; production monitoring/recovery administration remains future work. Changes are local and unpushed.
+
+Next: define account ownership, currency/amount representation, ledger invariants and transfer permissions/idempotency before implementing accounts, ledger or transfers. No financial behavior or AWS resources were added.
+
+Earlier entries below are historical and superseded by this status.
+
+---
+
+# Current status — React browser milestone, 1 November 2026
+
+React/TypeScript browser login, authorized customer profile and logout are implemented at https://localhost:7000/app. Gateway hosts the built application on the same HTTPS origin as the API. Email is passed as a login hint; Keycloak handles password entry. Secure HttpOnly sessions and session-bound CSRF remain in use. Fixed /app and /app/login-failed destinations are allowlisted; arbitrary redirects remain denied.
+
+Validation: 163 backend unit cases and 10 frontend cases pass; frontend build and .NET build pass; npm audit reports zero vulnerabilities. Real Edge testing passes login -> Keycloak -> profile -> reload -> logout, cookie policy, empty browser token storage and mobile width. Desktop/mobile screenshots were inspected. Dynamic Gateway and eight-service health/Swagger regression checks pass. Built files, browser screenshots, node_modules and secrets remain ignored. Changes are local and have not been committed or pushed in this milestone.
+
+See [WEB-APPLICATION.md](WEB-APPLICATION.md) for setup and tests. Still Development only. Next work is customer synchronization and the Transactions foundation, with ledger and transfer contracts defined before financial behavior is implemented.
+
+Earlier entries below are historical and superseded by this status.
+
+---
+
+# Current status — local login milestone, 1 November 2026
+
+The Development login milestone is implemented: Keycloak authorization code + PKCE, explicit fictional Program/customer/issuer-subject identity, linked AUTH_SESSION/CORE_SESSION, own-profile access, coordinated logout, atomic session audit and redacted independent errors. The solution has 37 projects. Core migrations 0001–0005, Gateway 0001–0002 and Identity Management 0001–0002 are applied locally. Other service business schemas are not provisioned.
+
+Build passes with zero warnings/errors; 156 unit tests pass. Real Keycloak/MySQL HTTPS tests verify login, scope, CSRF, callback replay, membership suspension, logout, audit rows and idempotent durable revocation recovery. All eight sample controllers and Swagger remain intact. No React frontend, real email verification, MFA, provider-global logout or financial features exist yet. Login currently requires Development and local workload credentials; it is not a production deployment.
+
+See [LOGIN-MILESTONE.md](LOGIN-MILESTONE.md) for setup, exact API sequence and limitations. Next: add the React browser login/profile/logout flow and then customer synchronization/Transactions work. Production service authentication and identity hardening remain required before deployment.
+
+The sections below are a chronological work log; earlier statements describe earlier stages and are superseded by this current status.
+
+---
+
 # CJora progress
 
 Updated 1 November 2026. Workspace: `C:\Users\RIEN\Projects\CJora`. The rename is complete. The archived external plan remains unchanged.

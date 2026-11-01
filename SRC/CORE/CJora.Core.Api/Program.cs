@@ -1,3 +1,5 @@
+using CJora.Core.Api;
+using CJora.Core.Api.Identity;
 using System.Net;
 using CJora.Routing;
 using CJora.Routing.Persistence;
@@ -20,7 +22,10 @@ builder.Services.AddSingleton(_ => new HttpMessageInvoker(new SocketsHttpHandler
 }));
 
 
+builder.AddCoreIdentity();
+builder.AddCustomerSynchronization();
 var app = builder.Build();
+app.UseCoreIdentity();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

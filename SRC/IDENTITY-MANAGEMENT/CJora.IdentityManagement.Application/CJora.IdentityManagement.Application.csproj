@@ -1,1 +1,1 @@
-<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\CJora.IdentityManagement.Domain\CJora.IdentityManagement.Domain.csproj" /></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\CJora.IdentityManagement.Domain\CJora.IdentityManagement.Domain.csproj" /></ItemGroup><ItemGroup><ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Identity.Contracts\CJora.Identity.Contracts.csproj" /></ItemGroup></Project>

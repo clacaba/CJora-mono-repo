@@ -19,3 +19,5 @@ node_modules/
 
 # Local reference samples and database dumps are not CJora source.
 /Reference/
+
+**/dist/

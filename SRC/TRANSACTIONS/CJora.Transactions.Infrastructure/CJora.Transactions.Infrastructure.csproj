@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\CJora.Transactions.Application\CJora.Transactions.Application.csproj" />
+    <ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Routing.Persistence\CJora.Routing.Persistence.csproj" />
+    <ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Kafka\CJora.Kafka.csproj" />
+  </ItemGroup>
+</Project>

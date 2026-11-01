@@ -1,0 +1,1 @@
+{"name":"cjora-monorepo","private":true,"workspaces":["SRC/WEB/CJora.Web"],"scripts":{"build:web":"npm run build --workspace @cjora/web","test:web":"npm run test --workspace @cjora/web","dev:web":"npm run dev --workspace @cjora/web"}}

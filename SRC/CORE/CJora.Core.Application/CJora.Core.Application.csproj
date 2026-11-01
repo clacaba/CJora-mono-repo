@@ -11,4 +11,4 @@
   </PropertyGroup>
 
 <ItemGroup><ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Routing\CJora.Routing.csproj" /></ItemGroup>
-</Project>
+<ItemGroup><ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Identity.Contracts\CJora.Identity.Contracts.csproj" /><ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.CustomerEvents\CJora.CustomerEvents.csproj" /></ItemGroup></Project>

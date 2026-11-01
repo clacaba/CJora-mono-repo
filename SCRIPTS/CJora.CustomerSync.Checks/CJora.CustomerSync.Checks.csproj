@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType></PropertyGroup><ItemGroup><ProjectReference Include="../../SRC/CORE/CJora.Core.Infrastructure/CJora.Core.Infrastructure.csproj"/><ProjectReference Include="../../SRC/TRANSACTIONS/CJora.Transactions.Infrastructure/CJora.Transactions.Infrastructure.csproj"/></ItemGroup></Project>

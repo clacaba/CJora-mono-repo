@@ -15,3 +15,17 @@ Gateway has only Core as an upstream. All eight APIs have WeatherForecast and He
 See [dynamic Gateway and HTTPS](DOCS/DYNAMIC-GATEWAY.md), [unit tests](DOCS/TESTING.md), [all service endpoints](DOCS/SERVICE-ENDPOINTS.md), [local dependencies](DOCS/LOCAL-DEVELOPMENT.md), [migration ownership](DOCS/MIGRATIONS.md), and [progress](DOCS/PROGRESS.md).
 
 Gateway owns CJORA_GATEWAY.SERVICE_METHOD and resolves /{service}/{method}. Core orchestrates the selected operation without reading that database. Initialize with SCRIPTS/Initialize-GatewayDatabase.ps1; see DOCS/DYNAMIC-GATEWAY.md for the local-only caller bridge and production security boundaries.
+
+## Local login milestone
+
+Keycloak login, linked application/authentication sessions, own profile and logout are implemented for Development. Start with [the login guide](DOCS/LOGIN-MILESTONE.md). Run SCRIPTS/Initialize-Identity.ps1 after Gateway setup, then SCRIPTS/Test-Login.ps1. The browser application is documented below; production deployment remains future work.
+
+React/TypeScript browser login, profile and logout now run through Gateway at https://localhost:7000/app. Build with npm ci followed by npm run build:web before starting Gateway. See [browser setup and tests](DOCS/WEB-APPLICATION.md).
+
+## Customer synchronization
+
+Core now publishes customer snapshots through a transactional outbox to local Kafka; Transactions maintains the same customer UUID in its own projection. Run SCRIPTS/Initialize-CustomerSync.ps1, then SCRIPTS/Test-CustomerSync.ps1. See [event contract, setup and recovery](DOCS/CUSTOMER-SYNCHRONIZATION.md). This does not yet implement accounts, ledger or transfers.
+
+## Account and ledger contracts
+
+The next financial milestone is specified in [FINANCIAL-CONTRACTS.md](DOCS/FINANCIAL-CONTRACTS.md), with a proposed OpenAPI document and tested pure domain/request rules. Financial endpoints, tables and posting routines are not implemented or enabled yet. No funds are created by the contract code.
