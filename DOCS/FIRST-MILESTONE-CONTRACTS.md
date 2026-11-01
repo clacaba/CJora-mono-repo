@@ -4,7 +4,7 @@ Status: proposed contract, 31 October 2026. No endpoints below are implemented. 
 
 ## Scope and boundaries
 
-One fictional Program, email login via an established identity provider, linked AUTH_SESSION and CORE_SESSION, authorized own-profile access, logout, audit and error records. Every public endpoint below enters Gateway then Core. User Accounts owns provider integration, identity linkage, membership and AUTH_SESSION. Core owns Program/customer and CORE_SESSION. Each service authenticates internal callers and validates applicable Program scope.
+One fictional Program, email login via an established identity provider, linked AUTH_SESSION and CORE_SESSION, authorized own-profile access, logout, audit and error records. Every public endpoint below enters Gateway then Core. Identity Management owns provider integration, identity linkage, membership and AUTH_SESSION. Core owns Program/customer and CORE_SESSION. Each service authenticates internal callers and validates applicable Program scope.
 
 Proposed browser model: same-origin frontend and Gateway, server-managed opaque session cookie, provider authorization-code flow with PKCE. Browser JavaScript receives neither access nor refresh tokens. Keycloak is selected. Its local realm/client runtime setup is not yet verified. Exact provider endpoints, claims, logout support and verification screens must be verified after selection.
 
@@ -15,14 +15,14 @@ All paths use `/api/v1`. JSON property names use camelCase; uppercase naming app
 | Method and path | Contract | Responses |
 | --- | --- | --- |
 | GET /cor/programs/resolve?key=cjora-demo | Public minimal branding: `programUuid`, `key`, `displayName`. Approved Program keys only; no arbitrary host lookup. | 200; 404 unavailable; 429 |
-| GET /usr/csrf | Issues pre-login/browser CSRF context and returns `{ csrfToken }`; no identity data. | 200; 503 |
-| POST /usr/sessions | CSRF-protected `{ programKey, email, returnPath }`. Starts provider login; email is only a login hint. Returns `{ authorizationUrl }` for an approved provider. Validate bounded email and allowlisted relative return paths. | 200; 400 invalid format; 429; 503. Membership/account-existence failures must not be revealed here. |
-| GET /usr/sessions/callback | Provider code/state callback through Gateway/Core to User Accounts. Verify one-use state, PKCE, nonce, issuer, audience, signature and expiry. Resolve identity from immutable issuer/subject; verified email policy applies to initial linkage only. | 303 to allowlisted app path after linked sessions are active; otherwise 303 to generic login error with opaque support reference. Never return tokens in the URL. |
+| GET /idm/csrf | Issues pre-login/browser CSRF context and returns `{ csrfToken }`; no identity data. | 200; 503 |
+| POST /idm/sessions | CSRF-protected `{ programKey, email, returnPath }`. Starts provider login; email is only a login hint. Returns `{ authorizationUrl }` for an approved provider. Validate bounded email and allowlisted relative return paths. | 200; 400 invalid format; 429; 503. Membership/account-existence failures must not be revealed here. |
+| GET /idm/sessions/callback | Provider code/state callback through Gateway/Core to Identity Management. Verify one-use state, PKCE, nonce, issuer, audience, signature and expiry. Resolve identity from immutable issuer/subject; verified email policy applies to initial linkage only. | 303 to allowlisted app path after linked sessions are active; otherwise 303 to generic login error with opaque support reference. Never return tokens in the URL. |
 | GET /cor/sessions/current | Requires active linked sessions. Returns `sessionUuid`, `programUuid`, `customerUuid`, `expiresAtUtc`. | 200; 401 invalid/expired/revoked; 403 membership/restriction denial; 503 unable to validate |
 | GET /cor/customers/me | Requires active linked sessions and own-profile permission. Returns `customerUuid`, `programUuid`, `displayName`, `email`. Derive customer from the session; accept no customer override. | 200; 401; 403; 503 |
-| DELETE /usr/sessions/current | CSRF-protected, idempotent current-browser logout. Revoke authentication session and linked Core sessions. Expired/absent cookie returns success without disclosing identity. | 204 when application-session revocation is durable; 503 when completion cannot be confirmed. Clear the cookie on either outcome. |
+| DELETE /idm/sessions/current | CSRF-protected, idempotent current-browser logout. Revoke authentication session and linked Core sessions. Expired/absent cookie returns success without disclosing identity. | 204 when application-session revocation is durable; 503 when completion cannot be confirmed. Clear the cookie on either outcome. |
 
-Internal service routes are separate contracts and cannot be exposed by wildcard forwarding. Gateway forwards business paths only to Core. User Accounts and Core must not call Gateway to reach one another.
+Internal service routes are separate contracts and cannot be exposed by wildcard forwarding. Gateway forwards business paths only to Core. Identity Management and Core must not call Gateway to reach one another.
 
 Example own-profile response:
 
@@ -45,9 +45,9 @@ Check current AUTH_SESSION status, Core session, Program enabled state, membersh
 
 ## Cross-service session lifecycle
 
-1. User Accounts validates provider authentication and active membership and persists a pending AUTH_SESSION with audit in its local transaction.
+1. Identity Management validates provider authentication and active membership and persists a pending AUTH_SESSION with audit in its local transaction.
 2. Core idempotently creates a pending CORE_SESSION using a stable operation UUID, authorized membership evidence and its own customer linkage. Audit in the Core transaction.
-3. User Accounts activates AUTH_SESSION only for the expected pending operation. Core activates CORE_SESSION after authoritative confirmation. Issue the browser cookie only after both are confirmed active.
+3. Identity Management activates AUTH_SESSION only for the expected pending operation. Core activates CORE_SESSION after authoritative confirmation. Issue the browser cookie only after both are confirmed active.
 4. If any step fails, issue no usable cookie. Persist recovery state and reconcile/revoke pending or orphaned records. Retries use the same operation UUID with unique constraints, never duplicate sessions.
 5. Logout durably revokes AUTH_SESSION first, immediately preventing protected access through authoritative checks. Revoke Core sessions idempotently with durable retry if Core is unavailable. Report 204 only once application revocation is durable and recovery work is recorded; provider global logout is a separate capability.
 
@@ -61,9 +61,9 @@ Persist session creation/activation/revocation and security-relevant denials in 
 
 ## Schema impact and decisions required
 
-Core: PROGRAM, CUSTOMER, CORE_SESSION, API_LOG, ERROR_LOGS and durable workflow/recovery state. User Accounts: USER_ACCOUNT, membership/permission tables, AUTH_SESSION, API_LOG, ERROR_LOGS and recovery state. Every table starts ID then UUID; use uppercase names, table/column comments, constraints, bounded fields, creation/update metadata where mutable, and an explicit MySQL concurrency strategy. Schema and migrations remain unimplemented.
+Core: PROGRAM, CUSTOMER, CORE_SESSION, API_LOG, ERROR_LOGS and durable workflow/recovery state. Identity Management: USER_ACCOUNT, membership/permission tables, AUTH_SESSION, API_LOG, ERROR_LOGS and recovery state. Every table starts ID then UUID; use uppercase names, table/column comments, constraints, bounded fields, creation/update metadata where mutable, and an explicit MySQL concurrency strategy. Schema migrations 0001/0002 are authored for Core and Identity Management but not applied. See LOGIN-SCHEMA.md; runtime behavior is unimplemented.
 
-Before schema/login implementation, settle: Keycloak client/realm configuration; verified email normalization and uniqueness; customer-to-Program cardinality; permission names; exact session expiry; recovery ownership and retention; HTTPS local ports. Proposed default cardinality is one customer per user per Program, with identity keyed by issuer/subject and membership unique by user/Program. This is a proposal, not a confirmed architecture decision.
+Before schema/login implementation, settle: Keycloak client/realm configuration; verified email normalization and uniqueness; permission names; exact session expiry; recovery ownership and retention; HTTPS local ports. The initial schema uses one customer per user per Program, identity keyed by issuer/subject and membership unique by user/Program. Email uniqueness and normalization are not assumed.
 
 ## Required acceptance checks
 

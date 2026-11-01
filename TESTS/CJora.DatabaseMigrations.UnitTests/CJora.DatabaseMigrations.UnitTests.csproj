@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\SRC\BUILDING-BLOCKS\CJora.DatabaseMigrations\CJora.DatabaseMigrations.csproj" />
+    <EmbeddedResource Include="Fixtures\*.sql" />
+  </ItemGroup>
+</Project>

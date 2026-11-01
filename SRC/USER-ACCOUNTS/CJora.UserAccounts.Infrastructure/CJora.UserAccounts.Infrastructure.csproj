@@ -1,1 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk"><ItemGroup><ProjectReference Include="..\CJora.UserAccounts.Application\CJora.UserAccounts.Application.csproj" /><ProjectReference Include="..\CJora.UserAccounts.Domain\CJora.UserAccounts.Domain.csproj" /></ItemGroup></Project>

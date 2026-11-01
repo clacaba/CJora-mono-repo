@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\CJora.Gateway.Application\CJora.Gateway.Application.csproj" />
+    <ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Routing.Persistence\CJora.Routing.Persistence.csproj" />
+    <PackageReference Include="MySqlConnector" Version="2.6.1" />
+  </ItemGroup>
+</Project>

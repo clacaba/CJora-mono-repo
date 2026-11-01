@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\SRC\IDENTITY-MANAGEMENT\CJora.IdentityManagement.Api\CJora.IdentityManagement.Api.csproj" />
+  </ItemGroup>
+</Project>

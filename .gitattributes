@@ -1,0 +1,4 @@
+# Applied migrations are checksum-sensitive: preserve their exact bytes on every platform.
+*.sql -text
+# This already-applied migration has an intentional trailing blank line; do not rewrite it.
+SRC/GATEWAY/CJora.Gateway.Migrations/Scripts/0002_service_method_registry.sql whitespace=-blank-at-eof

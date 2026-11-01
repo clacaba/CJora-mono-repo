@@ -1,0 +1,4 @@
+{
+  "folders": [ { "name": "CJora", "path": "." } ],
+  "settings": { "dotnet.defaultSolution": "CJora.sln" }
+}

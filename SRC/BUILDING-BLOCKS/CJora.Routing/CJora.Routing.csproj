@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+<ItemGroup><PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" /></ItemGroup></Project>

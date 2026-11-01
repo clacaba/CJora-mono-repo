@@ -1,6 +1,13 @@
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent
 $processes = @()
+$certificatePath = & (Join-Path $PSScriptRoot 'Export-DevelopmentCertificate.ps1')
+$services = @(
+ @('CORE','Core','cor',5075), @('IDENTITY-MANAGEMENT','IdentityManagement','idm',5076),
+ @('THIRD-PARTY-PROVIDER','Tpp','tpp',5077), @('PAYMENTS','Payments','pay',5078),
+ @('TRANSACTIONS','Transactions','txn',5079), @('GATEWAY','Gateway','gtw',5080),
+ @('NOTIFICATIONS','Notifications','ntc',5081), @('DOCUMENTS','Documents','doc',5082)
+)
 function Assert-FreePort([int]$port) {
  $client = New-Object System.Net.Sockets.TcpClient
  try { if ($client.ConnectAsync('127.0.0.1',$port).Wait(250) -and $client.Connected) { throw "Port $port is already in use. Stop the existing service before running this test." } }
@@ -13,34 +20,57 @@ function Wait-Response([string]$url) {
  }
  throw "Service did not become ready: $url"
 }
+function Assert-NotFound([string]$url) {
+ if ($url.StartsWith('https://')) {
+  $status = & curl.exe --silent --show-error --noproxy localhost,127.0.0.1 --cacert $certificatePath --output NUL --write-out '%{http_code}' $url
+  if ($LASTEXITCODE -ne 0 -or $status -ne '404') { throw "Expected 404: $url" }
+  return
+ }
+ try { Invoke-WebRequest $url -UseBasicParsing -ErrorAction Stop | Out-Null; throw "Unexpected available business route: $url" }
+ catch [System.Net.WebException] { if ([int]$_.Exception.Response.StatusCode -ne 404) { throw } }
+}
 $previousEnvironment = $env:ASPNETCORE_ENVIRONMENT
 try {
- foreach ($port in @(5075,5076,5080)) { Assert-FreePort $port }
+ foreach ($service in $services) { Assert-FreePort $service[3] }
+ Assert-FreePort 7000
  $env:ASPNETCORE_ENVIRONMENT = 'Development'
  $logs = Join-Path $repository '.local/smoke'
  New-Item -ItemType Directory -Path $logs -Force | Out-Null
- foreach ($item in @(
-  @('CORE/CJora.Core.Api','CJora.Core.Api'),
-  @('USER-ACCOUNTS/CJora.UserAccounts.Api','CJora.UserAccounts.Api'),
-  @('GATEWAY/CJora.Gateway.Api','CJora.Gateway.Api')
- )) {
-  $directory = Join-Path $repository "SRC/$($item[0])"
-  $dll = Join-Path $directory "bin/Debug/net8.0/$($item[1]).dll"
+ foreach ($service in $services) {
+  $name = "CJora.$($service[1]).Api"
+  $directory = Join-Path $repository "SRC/$($service[0])/$name"
+  $dll = Join-Path $directory "bin/Debug/net8.0/$name.dll"
   if (-not (Test-Path $dll)) { throw 'Build the solution before running smoke tests.' }
-  $processes += Start-Process dotnet -ArgumentList @($dll,'--urls', $(switch ($item[1]) { 'CJora.Core.Api' { 'http://localhost:5075' } 'CJora.UserAccounts.Api' { 'http://localhost:5076' } default { 'http://localhost:5080' } })) -WorkingDirectory $directory -WindowStyle Hidden -PassThru -RedirectStandardOutput "$logs/$($item[1]).out.log" -RedirectStandardError "$logs/$($item[1]).err.log"
+  $urls = "http://localhost:$($service[3])"
+  if ($service[1] -eq 'Gateway') { $urls += ';https://localhost:7000' }
+  $processes += Start-Process dotnet -ArgumentList @($dll,'--urls',$urls) -WorkingDirectory $directory -WindowStyle Hidden -PassThru -RedirectStandardOutput "$logs/$name.out.log" -RedirectStandardError "$logs/$name.err.log"
  }
- $core = Wait-Response 'http://localhost:5075/api/v1/cor/health/live'
- $gateway = Wait-Response 'http://localhost:5080/health/live'
- $accounts = Wait-Response 'http://localhost:5076/health/live'
- $forwarded = Wait-Response 'http://localhost:5080/api/v1/cor/health/live'
- if ($core.service -ne 'Core' -or $gateway.service -ne 'Gateway' -or $accounts.service -ne 'UserAccounts' -or $forwarded.service -ne 'Core') { throw 'Unexpected routing identity' }
- $swagger = Invoke-WebRequest 'http://localhost:5075/swagger/v1/swagger.json' -UseBasicParsing
- if ($swagger.StatusCode -ne 200) { throw 'Swagger unavailable' }
- foreach ($path in @('/swagger/index.html','/WeatherForecast','/api/v1/usr/sessions')) {
-  try { Invoke-WebRequest "http://localhost:5080$path" -UseBasicParsing -ErrorAction Stop | Out-Null; throw "Unexpected public route: $path" }
-  catch [System.Net.WebException] { if ([int]$_.Exception.Response.StatusCode -ne 404) { throw } }
+ foreach ($service in $services) {
+  $baseUrl = "http://localhost:$($service[3])"
+  $health = Wait-Response "$baseUrl/health/live"
+  if ($health.service -ne $service[1] -or $health.status -ne 'alive') { throw "Wrong health response for $($service[1])" }
+  $healthRoot = Invoke-RestMethod "$baseUrl/health"
+  if ($healthRoot.service -ne $service[1]) { throw 'Health root route mismatch' }
+  $weather = Invoke-RestMethod "$baseUrl/WeatherForecast"
+  if ($weather.Count -ne 5) { throw "Expected five sample forecasts for $($service[1])" }
+  foreach ($forecast in $weather) {
+   if (-not $forecast.date -or -not $forecast.summary -or $null -eq $forecast.temperatureC -or $null -eq $forecast.temperatureF) { throw 'Invalid weather payload' }
+  }
+  $swagger = Invoke-RestMethod "$baseUrl/swagger/v1/swagger.json"
+  if (-not $swagger.paths.'/WeatherForecast' -or -not $swagger.paths.'/health/live') { throw "Controllers missing from OpenAPI for $($service[1])" }
+  $swaggerUi = Invoke-WebRequest "$baseUrl/swagger/index.html" -UseBasicParsing
+  if ($swaggerUi.StatusCode -ne 200) { throw 'Swagger UI unavailable' }
+  if ($service[1] -ne 'Gateway') {
+   $alias = Invoke-RestMethod "$baseUrl/api/v1/$($service[2])/health/live"
+   if ($alias.service -ne $service[1]) { throw 'Versioned health alias mismatch' }
+  }
+  Write-Output "PASS: $($service[1]) health, five sample forecasts, Swagger UI and OpenAPI controllers."
  }
- Write-Output 'PASS: Core, Gateway and User Accounts liveness; Gateway forwards to Core; Core Swagger; non-API/sample/login routes are unavailable through Gateway.'
+ $forwarded = (& curl.exe --silent --show-error --fail --noproxy localhost,127.0.0.1 --cacert $certificatePath 'https://localhost:7000/api/v1/cor/health/live') | ConvertFrom-Json
+ if ($forwarded.service -ne 'Core') { throw 'Gateway is not forwarding to Core' }
+ Assert-NotFound 'https://localhost:7000/api/v1/idm/sessions'
+ Assert-NotFound 'https://localhost:7000/api/v1/idm/health/live'
+ Write-Output 'PASS: Gateway still forwards versioned API requests only to Core; login and direct Identity Management proxy routes remain unavailable.'
 }
 finally {
  foreach ($process in $processes) { if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force } }

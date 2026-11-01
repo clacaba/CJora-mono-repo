@@ -16,4 +16,5 @@
     <ProjectReference Include="..\CJora.Core.Infrastructure\CJora.Core.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup><PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" /></ItemGroup>
 </Project>

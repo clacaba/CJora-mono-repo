@@ -1,0 +1,9 @@
+@host = http://localhost:5081
+
+### Process liveness (not dependency readiness)
+GET {{host}}/health/live
+Accept: application/json
+
+### Fictional template sample
+GET {{host}}/WeatherForecast
+Accept: application/json

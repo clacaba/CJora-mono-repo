@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\SRC\GATEWAY\CJora.Gateway.Api\CJora.Gateway.Api.csproj" />
+  </ItemGroup>
+</Project>

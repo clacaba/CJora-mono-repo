@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\SRC\PAYMENTS\CJora.Payments.Api\CJora.Payments.Api.csproj" />
+  </ItemGroup>
+</Project>

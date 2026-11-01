@@ -1,12 +1,7 @@
 namespace CJora.Core.Api;
 
-public class WeatherForecast
+/// <summary>Generated sample data used to verify this API; unrelated to financial activity.</summary>
+public sealed record WeatherForecast(DateOnly Date, int TemperatureC, string Summary)
 {
-    public DateOnly Date { get; set; }
-
-    public int TemperatureC { get; set; }
-
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-
-    public string? Summary { get; set; }
+    public int TemperatureF => (int)Math.Round(TemperatureC * 9d / 5d + 32d, MidpointRounding.AwayFromZero);
 }

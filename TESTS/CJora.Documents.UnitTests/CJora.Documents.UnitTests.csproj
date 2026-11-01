@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\SRC\DOCUMENTS\CJora.Documents.Api\CJora.Documents.Api.csproj" />
+  </ItemGroup>
+</Project>

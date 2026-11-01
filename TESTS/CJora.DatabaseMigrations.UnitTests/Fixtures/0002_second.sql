@@ -1,0 +1,1 @@
+-- Unit-test discovery fixture; never executed against a database.

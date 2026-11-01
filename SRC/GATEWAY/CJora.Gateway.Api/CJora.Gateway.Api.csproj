@@ -1,3 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup><PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" /></ItemGroup>
+  <ItemGroup><PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" /></ItemGroup>
+<PropertyGroup><UserSecretsId>cjora-gateway-local-development</UserSecretsId></PropertyGroup><ItemGroup><ProjectReference Include="..\CJora.Gateway.Application\CJora.Gateway.Application.csproj" /><ProjectReference Include="..\CJora.Gateway.Infrastructure\CJora.Gateway.Infrastructure.csproj" /></ItemGroup>
 </Project>

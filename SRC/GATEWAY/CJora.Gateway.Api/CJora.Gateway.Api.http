@@ -1,0 +1,13 @@
+@host = https://localhost:7000
+
+### Registered Core process liveness
+GET {{host}}/core/health
+Accept: application/json
+
+### Development-only JSON transport check
+POST {{host}}/core/echo
+Content-Type: application/json
+
+{"message":"fictional transport test"}
+
+### Multipart example uses a local sample file; see DYNAMIC-GATEWAY.md

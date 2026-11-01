@@ -1,6 +1,9 @@
-@CJora.Core.Api_HostAddress = http://localhost:5075
+@host = http://localhost:5075
 
-GET {{CJora.Core.Api_HostAddress}}/weatherforecast/
+### Process liveness (not dependency readiness)
+GET {{host}}/health/live
 Accept: application/json
 
-###
+### Fictional template sample
+GET {{host}}/WeatherForecast
+Accept: application/json

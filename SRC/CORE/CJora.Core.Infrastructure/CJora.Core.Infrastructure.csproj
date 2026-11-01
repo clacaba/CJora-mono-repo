@@ -11,4 +11,5 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup><ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Routing.Persistence\CJora.Routing.Persistence.csproj" /></ItemGroup>
 </Project>

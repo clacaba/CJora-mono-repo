@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\SRC\NOTIFICATIONS\CJora.Notifications.Api\CJora.Notifications.Api.csproj" />
+  </ItemGroup>
+</Project>
