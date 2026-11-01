@@ -36,3 +36,5 @@ Sources: https://www.keycloak.org/getting-started/getting-started-docker and htt
 Gateway registry ownership is active: run SCRIPTS/Initialize-GatewayDatabase.ps1 to configure CJORA_GATEWAY, its migrations/runtime account, the legacy Core archive handoff and local Gateway-to-Core caller credential. Core migrations 0001-0004 and Gateway 0001-0002 are applied locally. Other service databases are not provisioned. Details: DYNAMIC-GATEWAY.md.
 
 Kafka/customer synchronization is now implemented for Development. SCRIPTS/Initialize-CustomerSync.ps1 starts the loopback-only Kafka service, creates its topic, applies Core/Transactions migrations and configures isolated runtime credentials. See CUSTOMER-SYNCHRONIZATION.md; earlier deferred-status entries are historical.
+
+The Development financial backend is configured separately by Initialize-Finance.ps1; currency, permissions and fictional funding are opt-in. Public APIs use the existing HTTPS Gateway and require Core/Identity Management/Transactions running. Financial browser screens are not implemented yet. See FINANCIAL-BACKEND.md.

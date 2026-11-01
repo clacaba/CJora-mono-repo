@@ -2,5 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="..\CJora.Transactions.Domain\CJora.Transactions.Domain.csproj" />
     <ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.CustomerEvents\CJora.CustomerEvents.csproj" />
+    <ProjectReference Include="..\..\BUILDING-BLOCKS\CJora.Finance.Contracts\CJora.Finance.Contracts.csproj" />
   </ItemGroup>
 </Project>

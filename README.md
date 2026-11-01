@@ -29,3 +29,7 @@ Core now publishes customer snapshots through a transactional outbox to local Ka
 ## Account and ledger contracts
 
 The next financial milestone is specified in [FINANCIAL-CONTRACTS.md](DOCS/FINANCIAL-CONTRACTS.md), with a proposed OpenAPI document and tested pure domain/request rules. Financial endpoints, tables and posting routines are not implemented or enabled yet. No funds are created by the contract code.
+
+## Development financial backend
+
+Protected account/review/confirm/history APIs and atomic ledger routines are implemented for fictional Development use. See [FINANCIAL-BACKEND.md](DOCS/FINANCIAL-BACKEND.md). Explicit demo setup is required for currency policy, financial permissions and fictional funding. The React application still shows login/profile; financial screens are next.

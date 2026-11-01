@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const spec=JSON.parse(fs.readFileSync(new URL('../DOCS/CONTRACTS/transactions-v1.openapi.json',import.meta.url),'utf8'));
 assert.equal(spec.openapi,'3.0.3');
-assert.match(spec.info.description,/DESIGN CONTRACT ONLY/);
+assert.match(spec.info.description,/DEVELOPMENT ONLY/);
 function visit(node){
  if(!node||typeof node!=='object')return;
  if(node.$ref){
@@ -36,5 +36,5 @@ assert.equal(amount.type,'string');
 assert(new RegExp(amount.pattern).test('9007199254740993'));
 for(const invalid of ['0','01','-1','1.0','1e2',' 1'])assert(!new RegExp(amount.pattern).test(invalid));
 assert.equal(spec.components.schemas.ConfirmTransferIntentRequest.properties.reviewVersion.enum[0],1);
-console.log('PASS: proposed OpenAPI references, paths, strict request bodies, amount strings and mutation security/idempotency requirements.');
-console.log('These are contract sanity checks; they do not assert implemented endpoints or runtime OpenAPI conformance.');
+console.log('PASS: financial OpenAPI references, paths, strict request bodies, amount strings and mutation security/idempotency requirements.');
+console.log('These are contract sanity checks; runtime behavior is checked separately by Test-Finance.ps1 -Api.');

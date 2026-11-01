@@ -1,3 +1,4 @@
+using CJora.Core.Api.Finance;
 using CJora.Core.Api;
 using CJora.Core.Api.Identity;
 using System.Net;
@@ -23,9 +24,11 @@ builder.Services.AddSingleton(_ => new HttpMessageInvoker(new SocketsHttpHandler
 
 
 builder.AddCoreIdentity();
+builder.AddCoreFinance();
 builder.AddCustomerSynchronization();
 var app = builder.Build();
 app.UseCoreIdentity();
+app.UseCoreFinance();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

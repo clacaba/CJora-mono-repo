@@ -21,3 +21,5 @@ node_modules/
 /Reference/
 
 **/dist/
+
+.fake

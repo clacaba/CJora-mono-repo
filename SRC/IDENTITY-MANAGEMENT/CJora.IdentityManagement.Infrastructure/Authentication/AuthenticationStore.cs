@@ -6,7 +6,7 @@ using static CJora.Routing.Persistence.SessionSql;
 
 namespace CJora.IdentityManagement.Infrastructure.Authentication;
 
-public sealed class AuthenticationStore(string connectionString,TimeProvider clock) : IAuthenticationStore
+public sealed class AuthenticationStore(string connectionString,TimeProvider clock) : IAuthenticationStore, IFinancialPermissionStore
 {
     private DateTime Now=>clock.GetUtcNow().UtcDateTime;
     private async Task<MySqlConnection> Open()
@@ -142,4 +142,22 @@ public sealed class AuthenticationStore(string connectionString,TimeProvider clo
         await Audit(connection,transaction,Guid.NewGuid(),null,null,null,operation,"SECURITY",null,"CHECK",operation,correlation,operation=="LOGIN_STARTED"?"SUCCEEDED":"DENIED");
         await transaction.CommitAsync();
     }
-}
+    public async Task<ValidatedIdentity> AuthorizePermissionAsync(AuthorizeSessionPermission request)
+    {
+        if(request.Permission is not ("ACCOUNTS.READ" or "TRANSFERS.CREATE" or "TRANSACTIONS.READ"))
+            throw new IdentityFailure(403,"FINANCIAL_PERMISSION_DENIED");
+        var validated=await ValidateAsync(request.Session);
+        await using var connection=await Open();
+        await using var query=Command(connection,null,"""
+            SELECT COUNT(*) FROM AUTH_SESSION S JOIN MEMBERSHIP M ON M.ID=S.MEMBERSHIP_ID
+            JOIN USER_ACCOUNT U ON U.ID=S.USER_ACCOUNT_ID
+            JOIN MEMBERSHIP_PERMISSION P ON P.MEMBERSHIP_ID=M.ID
+            WHERE S.UUID=@auth AND S.CORE_SESSION_UUID=@core AND S.PROGRAM_UUID=@program AND U.UUID=@user
+              AND S.STATE='ACTIVE' AND S.EXPIRES_DATETIME>@now AND M.STATUS='ACTIVE'
+              AND U.IS_ENABLED=1 AND U.EMAIL_VERIFIED=1 AND P.IS_ENABLED=1 AND P.PERMISSION_CODE=@permission
+            """,("@auth",request.Session.AuthSessionUuid.ToString("D")),("@core",request.Session.CoreSessionUuid.ToString("D")),
+            ("@program",request.Session.ProgramUuid.ToString("D")),("@user",request.Session.UserUuid.ToString("D")),
+            ("@now",Now),("@permission",request.Permission));
+        if(Convert.ToInt64(await query.ExecuteScalarAsync())!=1)throw new IdentityFailure(403,"FINANCIAL_PERMISSION_DENIED");
+        return validated;
+    }}

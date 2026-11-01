@@ -14,9 +14,10 @@ try {
   if($secrets[$name] -notmatch '^[a-f0-9]{64}$'){throw 'Generated synchronization credentials must be 64 hex characters. Values suppressed.'}
  }
  [IO.File]::WriteAllText($path,$content,(New-Object Text.UTF8Encoding($false)))
- function Sql([string]$query){
+ function Sql([string]$query,[switch]$Read){
   $result=$query | docker compose --env-file INFRASTRUCTURE/LOCAL/.env -f INFRASTRUCTURE/LOCAL/compose.yaml exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot --batch --skip-column-names' 2>&1
   if($LASTEXITCODE-ne0){throw 'Synchronization SQL provisioning failed. Output suppressed.'}
+  if($Read){return $result}
  }
  $txMigration=$secrets['CJORA_TRANSACTIONS_MIGRATION_PASSWORD'];$txRuntime=$secrets['CJORA_TRANSACTIONS_RUNTIME_PASSWORD'];$outbox=$secrets['CJORA_CORE_OUTBOX_PASSWORD'];$writer=$secrets['CJORA_CORE_CUSTOMER_PASSWORD']
  Sql @"
@@ -24,6 +25,10 @@ CREATE DATABASE IF NOT EXISTS CJORA_TRANSACTIONS CHARACTER SET utf8mb4 COLLATE u
 CREATE USER IF NOT EXISTS 'cjora_tx_migrator'@'%' IDENTIFIED BY '$txMigration';
 GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,DROP,INDEX,REFERENCES ON CJORA_TRANSACTIONS.* TO 'cjora_tx_migrator'@'%';
 CREATE USER IF NOT EXISTS 'cjora_tx_sync'@'%' IDENTIFIED BY '$txRuntime';
+CREATE USER IF NOT EXISTS 'cjora_tx_finance_definer'@'%' ACCOUNT LOCK;
+ALTER USER 'cjora_tx_finance_definer'@'%' ACCOUNT LOCK;
+GRANT CREATE ROUTINE,ALTER ROUTINE ON CJORA_TRANSACTIONS.* TO 'cjora_tx_migrator'@'%';
+GRANT SET_ANY_DEFINER ON *.* TO 'cjora_tx_migrator'@'%';
 CREATE USER IF NOT EXISTS 'cjora_core_outbox'@'%' IDENTIFIED BY '$outbox';
 CREATE USER IF NOT EXISTS 'cjora_core_customer_operator'@'%' IDENTIFIED BY '$writer';
 "@
@@ -32,7 +37,10 @@ CREATE USER IF NOT EXISTS 'cjora_core_customer_operator'@'%' IDENTIFIED BY '$wri
   $env:CJORA_TRANSACTIONS_MIGRATION_CONNECTION="Server=127.0.0.1;Port=3307;Database=CJORA_TRANSACTIONS;User ID=cjora_tx_migrator;Password=$txMigration;SslMode=Disabled;Connection Timeout=5"
   dotnet run --project SRC/TRANSACTIONS/CJora.Transactions.Migrations -- --apply
   if($LASTEXITCODE-ne0){throw 'Transactions migration failed; inspect interrupted DDL before retrying.'}
- } finally {$env:CJORA_TRANSACTIONS_MIGRATION_CONNECTION=$previous}
+ } finally {
+  $env:CJORA_TRANSACTIONS_MIGRATION_CONNECTION=$previous
+  Sql "REVOKE SET_ANY_DEFINER ON *.* FROM 'cjora_tx_migrator'@'%';"
+ }
  Sql @"
 GRANT SELECT,INSERT,UPDATE ON CJORA_TRANSACTIONS.CUSTOMER_REFERENCE TO 'cjora_tx_sync'@'%';
 GRANT SELECT,INSERT ON CJORA_TRANSACTIONS.CUSTOMER_EVENT_INBOX TO 'cjora_tx_sync'@'%';
@@ -46,6 +54,18 @@ GRANT SELECT,INSERT ON CJORA_CORE.CUSTOMER_EVENT_OUTBOX TO 'cjora_core_customer_
 GRANT INSERT ON CJORA_CORE.API_LOG TO 'cjora_core_customer_operator'@'%';
 GRANT INSERT ON CJORA_CORE.ERROR_LOGS TO 'cjora_core_customer_operator'@'%';
 "@
+ foreach($table in @('CUSTOMER_REFERENCE','PROGRAM_FINANCIAL_POLICY','ACCOUNT','TRANSFER_INTENT','FINANCIAL_REQUEST','TRANSFER','LEDGER_JOURNAL','LEDGER_ENTRY','FINANCIAL_EVENT_OUTBOX','ACCOUNT_INTEGRITY_ALERT')){
+  Sql "GRANT SELECT ON CJORA_TRANSACTIONS.$table TO 'cjora_tx_finance_definer'@'%';"
+ }
+ foreach($table in @('TRANSFER_INTENT','FINANCIAL_REQUEST','TRANSFER','LEDGER_JOURNAL','LEDGER_ENTRY','FINANCIAL_EVENT_OUTBOX','API_LOG','ERROR_LOGS','ACCOUNT_INTEGRITY_ALERT')){
+  Sql "GRANT INSERT ON CJORA_TRANSACTIONS.$table TO 'cjora_tx_finance_definer'@'%';"
+ }
+ foreach($table in @('ACCOUNT','TRANSFER_INTENT','FINANCIAL_REQUEST','ACCOUNT_INTEGRITY_ALERT')){
+  Sql "GRANT UPDATE ON CJORA_TRANSACTIONS.$table TO 'cjora_tx_finance_definer'@'%';"
+ }
+ Sql "GRANT EXECUTE ON CJORA_TRANSACTIONS.* TO 'cjora_tx_finance_definer'@'%';"
+ $financeExists=Sql "SELECT COUNT(*) FROM mysql.user WHERE User='cjora_tx_finance' AND Host='%';" -Read
+ if("$financeExists" -eq '1'){Sql "GRANT EXECUTE ON PROCEDURE CJORA_TRANSACTIONS.FINANCE_RECONCILE TO 'cjora_tx_finance'@'%';"}
  $coreConnection="Server=127.0.0.1;Port=3307;Database=CJORA_CORE;User ID=cjora_core_outbox;Password=$outbox;SslMode=Disabled;Connection Timeout=3"
  $txConnection="Server=127.0.0.1;Port=3307;Database=CJORA_TRANSACTIONS;User ID=cjora_tx_sync;Password=$txRuntime;SslMode=Disabled;Connection Timeout=3"
  @{'CustomerSync:Enabled'='true';'ConnectionStrings:CoreOutbox'=$coreConnection}|ConvertTo-Json|dotnet user-secrets set --project SRC/CORE/CJora.Core.Api

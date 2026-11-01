@@ -25,3 +25,4 @@ public static class IdentityProtocol
         now >= expires || now - lastActivity >= IdleTimeout || lastActivity > now.AddMinutes(1);
     public static bool IsAllowedReturnPath(string? path) => path is "/app" or "/api/v1/cor/customers/me" or "/api/v1/cor/sessions/current";
 }
+public sealed record AuthorizeSessionPermission(ValidateSession Session,string Permission);

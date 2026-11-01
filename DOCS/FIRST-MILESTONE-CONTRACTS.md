@@ -16,4 +16,4 @@ DELETE /api/v1/idm/sessions/current uses a newly fetched session-bound CSRF toke
 
 Safe errors have code/reference or framework ProblemDetails. No raw tokens, password, exception text or downstream URLs are part of the business response. Ordinary profile reads are not audited. Session transitions are audited in each service's transaction; errors persist independently.
 
-Customer synchronization is implemented. Account/ledger/transfer contracts are documented in FINANCIAL-CONTRACTS.md; financial persistence, transfers and history endpoints are not implemented. Production authentication, real email verification/MFA and global Keycloak logout remain separate work.
+Customer synchronization is implemented. Fictional Development account/ledger/transfer/history backend is implemented; see FINANCIAL-BACKEND.md. Financial UI and production deployment remain future work. Production authentication, real email verification/MFA and global Keycloak logout remain separate work.

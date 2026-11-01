@@ -39,6 +39,7 @@ public static class IdentityEndpoints
         app.Use(async(context,next)=>
         {
             var path=context.Request.Path.Value??"";
+            if(context.Request.Path.StartsWithSegments("/internal/finance")){await next();return;}
             var identityPath=path.StartsWith("/internal/",StringComparison.OrdinalIgnoreCase) || path.StartsWith("/api/v1/idm/",StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api/v1/cor/customers/",StringComparison.OrdinalIgnoreCase) || path.StartsWith("/api/v1/cor/sessions/",StringComparison.OrdinalIgnoreCase) || path.StartsWith("/api/v1/cor/programs/",StringComparison.OrdinalIgnoreCase);
             if (!identityPath) {await next();return;}
@@ -134,7 +135,7 @@ public static class IdentityEndpoints
         app.MapPost("/internal/sessions/activate",async(ActivateSession request,HttpContext context,CoreSessionService service)=>await service.ActivateAsync(request,context.TraceIdentifier,context.RequestAborted));
         app.MapPost("/internal/sessions/revoke",async(RevokeSession request,HttpContext context,ICoreIdentityStore store)=>{await store.RevokeAsync(request.AuthSessionUuid,request.OperationUuid,context.TraceIdentifier,false);return Results.NoContent();});
     }
-    private static async Task ValidateBrowser(HttpContext context,IAntiforgery csrf,IConfiguration config)
+    internal static async Task ValidateBrowser(HttpContext context,IAntiforgery csrf,IConfiguration config)
     {
         if (context.Request.Headers.Origin.Count!=1 || context.Request.Headers.Origin.ToString()!=(config["Identity:PublicOrigin"]??"https://localhost:7000"))
             throw new IdentityFailure(403,"ORIGIN_REJECTED");

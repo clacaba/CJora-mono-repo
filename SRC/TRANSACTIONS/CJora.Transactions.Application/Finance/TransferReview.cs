@@ -8,7 +8,7 @@ public static class TransferIntentLifecycle
     public static bool CanTransition(TransferIntentState from,TransferIntentState to)=>
         from==TransferIntentState.Prepared&&to is TransferIntentState.Posted or TransferIntentState.Rejected or TransferIntentState.Expired;
 }
-/// <summary>Immutable server-side review proposal. Storage and transaction execution are future work.</summary>
+/// <summary>Immutable domain review proposal; persistence and atomic execution are handled by the financial repository/routines.</summary>
 public sealed class TransferReview
 {
     public Guid IntentUuid { get; }

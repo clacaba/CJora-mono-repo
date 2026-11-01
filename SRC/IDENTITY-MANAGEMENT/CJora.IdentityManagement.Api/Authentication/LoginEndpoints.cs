@@ -21,6 +21,7 @@ public static class LoginEndpoints
         var publicOrigin=config["Identity:PublicOrigin"]??"https://localhost:7000";
         var callback=publicOrigin+"/api/v1/idm/sessions/callback";
         builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton<IFinancialPermissionStore>(p=>(IFinancialPermissionStore)p.GetRequiredService<IAuthenticationStore>());
         builder.Services.AddSingleton<IAuthenticationStore>(p=>new AuthenticationStore(config.GetConnectionString("Identity")??"",p.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton<IRoutingErrorRecorder>(_=>new RoutingErrorRecorder(config.GetConnectionString("Identity"),
             Path.Combine(builder.Environment.ContentRootPath,".local","errors","identity-errors.jsonl"),"CJORA_IDENTITY_MANAGEMENT","IdentityManagement"));
@@ -119,6 +120,7 @@ public static class LoginEndpoints
             properties.Items["email"]=request.Email;properties.Items["returnPath"]=request.ReturnPath;
             return Results.Challenge(properties,["oidc"]);
         });
+        app.MapPost("/internal/finance/authorize",async(AuthorizeSessionPermission request,IFinancialPermissionStore store)=>await store.AuthorizePermissionAsync(request));
         app.MapPost("/internal/sessions/validate",async(ValidateSession request,IAuthenticationStore store)=>await store.ValidateAsync(request));
         app.MapPost("/internal/sessions/revoke",async(RevokeSession request,HttpContext context,IAuthenticationStore store)=>{await store.RevokeAsync(request,context.TraceIdentifier);return Results.NoContent();});
     }

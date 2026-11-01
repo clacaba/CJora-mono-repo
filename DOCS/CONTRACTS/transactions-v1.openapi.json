@@ -1,14 +1,14 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "CJora proposed account and internal-transfer contracts",
-    "version": "0.1.0",
-    "description": "DESIGN CONTRACT ONLY. No endpoints, account/ledger tables or posting implementation currently exist. Same-Program same-currency fictional internal transfers; no overdraft, FX, fees, holds or external payments."
+    "title": "CJora Development account and internal-transfer API",
+    "version": "0.2.0",
+    "description": "DEVELOPMENT ONLY. Protected backend implemented for fictional same-Program same-currency internal transfers. No real funds, overdraft, FX, fees, holds or external payments. See FINANCIAL-BACKEND.md for setup and limitations."
   },
   "servers": [
     {
       "url": "https://localhost:7000",
-      "description": "Proposed public routes through Gateway -> Core -> Transactions."
+      "description": "Public API through HTTPS Gateway -> Core -> protected Transactions service."
     }
   ],
   "security": [
@@ -23,7 +23,7 @@
         "tags": [
           "Proposed finance"
         ],
-        "description": "Contract only; not implemented. Requires ACCOUNTS.READ.",
+        "description": "Development-only implementation. Requires ACCOUNTS.READ.",
         "parameters": [
           {
             "name": "cursor",
@@ -135,7 +135,7 @@
         "tags": [
           "Proposed finance"
         ],
-        "description": "Contract only; not implemented. Requires TRANSFERS.CREATE and live linked-session validation.",
+        "description": "Development-only implementation. Requires TRANSFERS.CREATE and live linked-session validation.",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -298,7 +298,7 @@
         "tags": [
           "Proposed finance"
         ],
-        "description": "Contract only; not implemented. Requires TRANSFERS.CREATE.",
+        "description": "Development-only implementation. Requires TRANSFERS.CREATE.",
         "parameters": [
           {
             "name": "intentUuid",
@@ -398,7 +398,7 @@
         "tags": [
           "Proposed finance"
         ],
-        "description": "Contract only; not implemented. Requires TRANSFERS.CREATE and live linked-session validation.",
+        "description": "Development-only implementation. Requires TRANSFERS.CREATE and live linked-session validation.",
         "parameters": [
           {
             "name": "intentUuid",
@@ -570,7 +570,7 @@
         "tags": [
           "Proposed finance"
         ],
-        "description": "Contract only; not implemented. Requires TRANSACTIONS.READ.",
+        "description": "Development-only implementation. Requires TRANSACTIONS.READ.",
         "parameters": [
           {
             "name": "accountUuid",
@@ -691,7 +691,7 @@
         "tags": [
           "Proposed finance"
         ],
-        "description": "Contract only; not implemented. Requires TRANSACTIONS.READ.",
+        "description": "Development-only implementation. Requires TRANSACTIONS.READ.",
         "parameters": [
           {
             "name": "accountUuid",

@@ -1,3 +1,19 @@
+# Current status - protected Development financial backend, 1 November 2026
+
+Implemented the account list, immutable review, atomic confirmation, outcome lookup and scoped account history/detail APIs through HTTPS Gateway -> Core -> Transactions. Fresh linked-session/financial-permission checks and live Core recipient eligibility are required; profile permission and Kafka projection state alone do not authorize money operations. An independent signed Core/Transactions invocation binds session, route/query, body, key and nonce. Finance is Development-only.
+
+Transactions migrations 0003/0004 are applied: explicit demo Program policy, accounts, intents, idempotent outcomes, transfers, immutable journals/entries, financial event outbox and durable integrity alerts. The locked definer owns financial routines; the API runtime has approved EXECUTE/reads and cannot directly mutate money. Numeric ID/UUID ordering and documentation comments pass convention checks. The solution has 46 projects.
+
+Explicit fictional USD demo configuration was selected for integration testing: 100000 minor-unit initial funding and 1000000 per-transfer ceiling. Bootstrap uses an audited balanced demo-funding journal and preserves existing balances/permissions/configuration on replay. No actual cash, provider settlement or AWS resources exist. Financial event notifications remain queued; their dispatcher and reversal/admin APIs are not implemented.
+
+Validation: zero build warnings/errors and 256 backend unit tests pass. Real MySQL tests pass concurrent overspending, same/different-key races, opposing transfers, terminal-rejection replay, ledger/audit rollback, abandoned-result recovery, direct-DML/helper/cross-database denial and corruption restriction/alerts, including already-restricted accounts. Real Edge/Keycloak HTTPS API tests pass session/CSRF/strict-body protections, current permissions, stale-projection denial, scoped history/cursors, discarded HTTP receipt recovery, expiry, logout and new-session review denial. The full financial API workflow also passed while Kafka was stopped, after which Kafka was restarted. Existing service health/Swagger, dynamic Gateway/upload and linked-login regressions pass.
+
+See [FINANCIAL-BACKEND.md](FINANCIAL-BACKEND.md) for setup, endpoints, evidence and limitations. Next: React account, transfer entry/review/result and history screens. The current browser remains login/profile/logout. Production workload/step-up/operations are not claimed. Changes are local and unpushed.
+
+Earlier entries below are historical and superseded by this status.
+
+---
+
 # Current status — account and ledger contracts, 1 November 2026
 
 Account/ledger/internal-transfer contracts and pure domain/request rules are implemented. Money uses exact integer minor units and string API amounts; tested rules cover balanced immutable journals, ownership, Program/currency policy, no overdrafts, overflow, scoped idempotency, strict request DTOs, financial permission/freshness checks and session-bound five-minute reviews.

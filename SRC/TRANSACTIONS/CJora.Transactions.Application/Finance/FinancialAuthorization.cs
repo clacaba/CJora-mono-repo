@@ -11,7 +11,7 @@ public static class FinancialPermissions
     internal static readonly FrozenSet<string> Known=new[]{AccountsRead,TransfersCreate,TransactionsRead}.ToFrozenSet(StringComparer.Ordinal);
 }
 /// <summary>
-/// Input from a future authenticated authority adapter after live linked-session validation.
+/// Input from the authenticated authority adapter after live linked-session validation.
 /// This object is neither proof of authentication nor a browser request DTO.
 /// </summary>
 public sealed class FinancialAuthorityContext
@@ -36,7 +36,7 @@ public static class FinancialAuthorization
             throw new LedgerRuleViolation("FINANCIAL_AUTHORITY_EXPIRED");
     }
 }
-/// <summary>Contract only. No provider or posting repository is currently implemented/registered.</summary>
+/// <summary>Financial authority adapter contract; the Development implementation performs authenticated live Core validation.</summary>
 public interface IFinancialAuthorityProvider
 {
     Task<FinancialAuthorityContext> ValidateForConfirmationAsync(Guid coreSessionUuid,Guid intentUuid,RequestFingerprint confirmedTerms,CancellationToken cancellationToken);

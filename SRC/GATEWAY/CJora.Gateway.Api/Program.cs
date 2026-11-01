@@ -36,8 +36,10 @@ builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSecti
         transform.ProxyRequest.Headers.Remove(GatewayRouteContext.TokenHeader);
         transform.ProxyRequest.Headers.Remove(GatewayRouteContext.RouteHeader);
         transform.ProxyRequest.Headers.Remove(LocalIdentityCaller.Header);
+        transform.ProxyRequest.Headers.Remove("X-CJora-Core-Transactions");
+        transform.ProxyRequest.Headers.Remove("X-CJora-Finance-Invocation");
         if (builder.Environment.IsDevelopment() && GatewayRouteContext.IsConfiguredToken(builder.Configuration["GatewayBridge:Token"]) &&
-            (transform.HttpContext.Request.Path.StartsWithSegments("/api/v1/idm") || transform.HttpContext.Request.Path.StartsWithSegments("/api/v1/cor/customers") ||
+            (transform.HttpContext.Request.Path.StartsWithSegments("/api/v1/txn") || transform.HttpContext.Request.Path.StartsWithSegments("/api/v1/idm") || transform.HttpContext.Request.Path.StartsWithSegments("/api/v1/cor/customers") ||
              transform.HttpContext.Request.Path.StartsWithSegments("/api/v1/cor/sessions") || transform.HttpContext.Request.Path.StartsWithSegments("/api/v1/cor/programs")))
             transform.ProxyRequest.Headers.TryAddWithoutValidation(GatewayRouteContext.TokenHeader,builder.Configuration["GatewayBridge:Token"]);
         return ValueTask.CompletedTask;

@@ -1,8 +1,8 @@
 # Accounts, ledger and internal-transfer contracts
 
-Status: **contracts and pure domain rules implemented; financial persistence and HTTP endpoints are not implemented**. No financial migration has been applied, no accounts or funds are created, and no transfer can currently be posted. The existing login/customer synchronization behavior is unchanged.
+Status: **implemented for fictional Development financial operations**, including Transactions migrations 0003/0004, execute-only routines, protected APIs, live authority validation and scoped history. See [FINANCIAL-BACKEND.md](FINANCIAL-BACKEND.md) for setup, evidence and limitations. No real money or external payment integration is enabled.
 
-Machine-readable proposal: [transactions-v1.openapi.json](CONTRACTS/transactions-v1.openapi.json). Domain code: Transactions.Domain/Ledger. Request, idempotency, permission and review contracts: Transactions.Application/Finance. This document governs the next implementation milestone.
+Machine-readable API: [transactions-v1.openapi.json](CONTRACTS/transactions-v1.openapi.json). Domain code: Transactions.Domain/Ledger. Request/authority/review contracts: Transactions.Application/Finance. The rules below govern this Development implementation; remaining acceptance items for broader production features are called out in the backend guide.
 
 ## Scope and ownership
 
@@ -49,13 +49,13 @@ All public paths remain Gateway -> Core -> Transactions. Gateway owns routing lo
 | Prepare, inspect own intent and confirm | TRANSFERS.CREATE |
 | Own account history/detail | TRANSACTIONS.READ |
 
-These are reserved contract codes; no existing user has been granted them by this change. Current session validation checks profile access and must be extended explicitly before financial routes are enabled.
+These financial permissions are validated independently of profile access. Only the explicit fictional demo initialization grants them to the demo membership; schema-only initialization grants none.
 
 Core must validate the opaque browser session, active Program/customer, linked active authentication session and exact current membership/permission on each request. Before confirmation, Transactions must obtain a fresh authority result over an authenticated internal service channel and verify that scope against the stored intent and locked source account. Recipient eligibility is checked against Core's current state. Kafka projection state cannot substitute for these checks; authority unavailability fails closed.
 
-FinancialAuthorityContext is a typed internal adapter input, **not a token or proof of authentication**. Its pure guard requires known permission, all linked identifiers, UTC timestamps, no future validation time, validation age under 30 seconds and a nonexpired session. IFinancialAuthorityProvider has no implementation or DI registration yet. Implementing secure transport/live validation and binding it to the exact intent/terms is mandatory before exposing endpoints.
+FinancialAuthorityContext is a typed internal adapter input, **not a token or proof of authentication**. Its pure guard requires known permission, all linked identifiers, UTC timestamps, no future validation time, validation age under 30 seconds and a nonexpired session. CoreFinancialAuthorityClient implements IFinancialAuthorityProvider over the independent authenticated local service channel. Transactions binds it to the invocation/intent/terms and requires live authority before execution.
 
-Never accept Program/customer/user/session UUIDs, permission flags, balances or journal entries from the public request body. Internal context must be produced by trusted code, not deserialized browser claims. Gateway strips caller-supplied internal headers. The future Core -> Transactions service credential must be independent of the Core -> Identity Management credential, and production requires proper workload authentication/private transport.
+Never accept Program/customer/user/session UUIDs, permission flags, balances or journal entries from the public request body. Internal context must be produced by trusted code, not deserialized browser claims. Gateway strips caller-supplied internal headers. The Core -> Transactions service credential is independent of the Core -> Identity Management credential, and production requires proper workload authentication/private transport.
 
 CSRF and exact Origin remain mandatory for mutations. Login alone is not production transaction authorization; a real-payment implementation must add an appropriate step-up/transaction-authorization design bound to server-stored significant terms. The prototype review/session rules do not claim MFA or transaction signing.
 
@@ -63,7 +63,7 @@ Authorization is evaluated immediately before execution. Revocation after that d
 
 ## Review and API flow
 
-Only exact versioned routes in the proposed OpenAPI contract are intended. Dynamic SESSION routing currently remains fail-closed. Implemented Swagger does not advertise these proposed endpoints.
+The exact public versioned routes below are implemented through Gateway/Core. Transactions exposes only protected internal counterparts. Dynamic registry SESSION methods remain fail-closed; they do not bypass this workflow.
 
 1. GET /api/v1/txn/accounts returns only the authenticated customer's accounts and approved own balances.
 2. POST /api/v1/txn/transfer-intents validates terms and eligibility, stores an immutable review and returns 201. Identical request replay returns 200.
@@ -92,7 +92,7 @@ For a local transfer, POSTED means the entire MySQL transaction committed. A tim
 
 ## Proposed persistence and transaction boundary
 
-A future Transactions migration 0003 will define the tables, local foreign keys/checks and posting routine. No such migration is authored or applied in this milestone.
+Transactions migration 0003 implements the tables, scoped foreign keys/checks and routines. Migration 0004 adds durable integrity alerts and corrects reconciliation for already-restricted/closed accounts. Both are applied locally; applied scripts remain immutable.
 
 | Table | Required responsibility |
 | --- | --- |
@@ -103,6 +103,7 @@ A future Transactions migration 0003 will define the tables, local foreign keys/
 | LEDGER_JOURNAL | UUID/operation/transfer linkage, one Program/currency, equal totals, posted UTC time and immutable actor/creation data |
 | LEDGER_ENTRY | UUID, journal/account FKs bound to the same Program/currency, debit/credit, positive amount and unique per-account entry sequence |
 | FINANCIAL_EVENT_OUTBOX | Minimal future post-commit notification/synchronization events, independent of posting success |
+| ACCOUNT_INTEGRITY_ALERT | Deduplicated manual integrity investigations; no automatic resolution |
 | API_LOG / ERROR_LOGS | Existing service-owned business/security audit and independent redacted errors |
 
 Every table begins numeric ID then UUID, with uppercase identifiers and table/column documentation. Mutable records have creation/update actor/time and version metadata. Posted immutable records have creation metadata and no mutable financial fields. Use unique UUIDs, transfer-per-intent, scoped idempotency and account/entry sequence constraints.
@@ -132,11 +133,11 @@ Return public UUIDs, own direction/amount, timestamp, approved counterparty labe
 
 Cached account balances must reconcile to their credit/debit-normal ledger entries and per-account sequence. Scheduled reconciliation detects imbalance, missing/duplicated postings and cache drift, records safe errors and restricts affected financial operations for investigation. Do not silently change a balance to match an unverified figure.
 
-## Acceptance for the next implementation
+## Acceptance and remaining scope
 
 Domain/request tests already cover minor-unit precision, overflow, balanced entries, immutable journals, source ownership, Program/currency boundaries, policy absence/limits, scoped idempotency, injected fields, permissions, session freshness, review expiry and terminal state rules.
 
-Database/API implementation must additionally prove:
+Database/API integration checks now cover the core concurrency, rollback, idempotency, live authority and recovery requirements below. Reversal APIs, production administration and notification dispatch remain future work:
 
 - Concurrent transfers cannot overspend; opposing transfers use stable lock order.
 - Every commit/rejection/replay has the intended atomic state and audit; no money survives rollback.
@@ -147,6 +148,6 @@ Database/API implementation must additionally prove:
 - Account history pagination remains scoped and stable across concurrent commits.
 - Fictional funding balances and reversals are auditable compensating journals, never hidden opening amounts.
 
-Run dotnet test CJora.sln and node SCRIPTS/Test-FinancialContracts.mjs. The latter checks proposed references/shape/security requirements; it is not proof of runtime OpenAPI conformance.
+Run dotnet test CJora.sln and node SCRIPTS/Test-FinancialContracts.mjs. The latter checks API references/shape/security requirements; real implementation behavior is tested by Test-Finance.ps1 -Api rather than claimed from schema sanity alone.
 
 Sources: [ISO currency-code overview](https://www.iso.org/iso-4217-currency-codes.html), [SIX maintenance-agency currency list](https://www.six-group.com/dam/download/financial-information/data-center/iso-currrency/lists/list-one.xml) (example minor units verified 1 November 2026), [OWASP transaction authorization](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html), [RFC 9457 problem details](https://www.rfc-editor.org/rfc/rfc9457.html). CJora's prototype rules above are implementation decisions, not a claim of production readiness.
